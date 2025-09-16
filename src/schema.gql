@@ -1,0 +1,74 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Client {
+  """ID único del cliente"""
+  _id: ID!
+
+  """Dirección del cliente"""
+  direccion: String!
+
+  """Email del cliente"""
+  email: String!
+
+  """Fecha de registro del cliente"""
+  fecha_registro: DateTime!
+
+  """Indica si el cliente ha sido eliminado (soft delete)"""
+  isDeleted: Boolean!
+
+  """Nombre del cliente"""
+  nombre: String!
+
+  """Teléfono del cliente"""
+  telefono: String!
+}
+
+input CreateClientInput {
+  """Dirección del cliente"""
+  direccion: String!
+
+  """Email del cliente"""
+  email: String!
+
+  """Nombre del cliente"""
+  nombre: String!
+
+  """Teléfono del cliente"""
+  telefono: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Mutation {
+  createClient(createClientInput: CreateClientInput!): Client!
+  permanentDeleteClient(id: ID!): Boolean!
+  removeClient(id: ID!): Client!
+  restoreClient(id: ID!): Client!
+  updateClient(updateClientInput: UpdateClientInput!): Client!
+}
+
+type Query {
+  allClientsIncludingDeleted: [Client!]!
+  client(id: ID!): Client!
+  clients: [Client!]!
+}
+
+input UpdateClientInput {
+  """Dirección del cliente"""
+  direccion: String
+
+  """Email del cliente"""
+  email: String
+  id: ID!
+
+  """Nombre del cliente"""
+  nombre: String
+
+  """Teléfono del cliente"""
+  telefono: String
+}
