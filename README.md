@@ -88,10 +88,12 @@ Una vez que la aplicación esté ejecutándose:
 
 ## 📚 API GraphQL
 
-### 🔍 Queries (Consultas)
+> 💡 **Nota importante:** GraphQL funciona diferente a REST. **Todas las operaciones van por POST** al mismo endpoint `/graphql`, pero se diferencian por el tipo de operación (`query` o `mutation`) en el cuerpo de la petición.
 
+### 🔍 Queries (Consultas - equivalen a GET en REST)
+
+#### Obtener todos los clientes activos
 ```graphql
-# Obtener todos los clientes activos
 query {
   clients {
     _id
@@ -102,8 +104,10 @@ query {
     fecha_registro
   }
 }
+```
 
-# Obtener un cliente específico
+#### Obtener un cliente específico
+```graphql
 query {
   client(id: "CLIENT_ID") {
     _id
@@ -114,8 +118,10 @@ query {
     fecha_registro
   }
 }
+```
 
-# Obtener todos los clientes (incluyendo eliminados)
+#### Obtener todos los clientes (incluyendo eliminados)
+```graphql
 query {
   allClientsIncludingDeleted {
     _id
@@ -126,10 +132,10 @@ query {
 }
 ```
 
-### ✏️ Mutations (Operaciones)
+### ✏️ Mutations (Operaciones - equivalen a POST/PUT/DELETE en REST)
 
+#### Crear un nuevo cliente
 ```graphql
-# Crear un nuevo cliente
 mutation {
   createClient(createClientInput: {
     nombre: "Juan Pérez"
@@ -143,8 +149,10 @@ mutation {
     fecha_registro
   }
 }
+```
 
-# Actualizar un cliente
+#### Actualizar un cliente
+```graphql
 mutation {
   updateClient(updateClientInput: {
     id: "CLIENT_ID"
@@ -155,8 +163,10 @@ mutation {
     email
   }
 }
+```
 
-# Eliminar un cliente (soft delete)
+#### Eliminar un cliente (soft delete)
+```graphql
 mutation {
   removeClient(id: "CLIENT_ID") {
     _id
@@ -164,8 +174,10 @@ mutation {
     isDeleted
   }
 }
+```
 
-# Restaurar un cliente eliminado
+#### Restaurar un cliente eliminado
+```graphql
 mutation {
   restoreClient(id: "CLIENT_ID") {
     _id
@@ -173,8 +185,10 @@ mutation {
     isDeleted
   }
 }
+```
 
-# Eliminar permanentemente
+#### Eliminar permanentemente
+```graphql
 mutation {
   permanentDeleteClient(id: "CLIENT_ID")
 }
@@ -182,17 +196,118 @@ mutation {
 
 ## 🧪 Pruebas con Postman
 
-### Configuración
-- **URL:** `http://localhost:3000/graphql`
-- **Método:** `POST`
-- **Headers:** `Content-Type: application/json`
+> ⚠️ **IMPORTANTE:** En GraphQL, **TODAS las operaciones van por POST**, incluso las consultas (queries) que normalmente serían GET en REST.
 
-### Ejemplo de Body
+### ✅ Configuración Correcta para Postman
+
+#### Para CUALQUIER operación GraphQL (queries y mutations):
+
+1. **Método:** `POST` ← (Siempre POST, nunca GET)
+2. **URL:** `http://localhost:3000/graphql`
+3. **Headers:**
+   - Key: `Content-Type`
+   - Value: `application/json`
+4. **Body:**
+   - Selecciona **"raw"**
+   - Selecciona **"JSON"** en el dropdown
+
+### 📖 Ejemplos de Requests
+
+#### 🔍 Obtener todos los clientes (equivale a GET)
 ```json
 {
   "query": "query { clients { _id nombre email telefono direccion fecha_registro } }"
 }
 ```
+
+#### 👤 Obtener un cliente específico
+```json
+{
+  "query": "query { client(id: \"CLIENT_ID_AQUI\") { _id nombre email telefono direccion fecha_registro } }"
+}
+```
+
+#### ➕ Crear un nuevo cliente
+```json
+{
+  "query": "mutation { createClient(createClientInput: { nombre: \"Juan Pérez\", email: \"juan@example.com\", telefono: \"+34 123 456 789\", direccion: \"Calle Mayor 123\" }) { _id nombre email fecha_registro } }"
+}
+```
+
+#### ✏️ Actualizar un cliente
+```json
+{
+  "query": "mutation { updateClient(updateClientInput: { id: \"CLIENT_ID_AQUI\", nombre: \"Nombre Actualizado\" }) { _id nombre email } }"
+}
+```
+
+#### 🗑️ Eliminar un cliente (soft delete)
+```json
+{
+  "query": "mutation { removeClient(id: \"CLIENT_ID_AQUI\") { _id nombre isDeleted } }"
+}
+```
+
+### 📋 Respuestas Esperadas
+
+#### ✅ Respuesta Exitosa
+```json
+{
+  "data": {
+    "clients": [
+      {
+        "_id": "66e85a1b2f1234567890abcd",
+        "nombre": "María García",
+        "email": "maria.garcia@email.com",
+        "telefono": "+34 612 345 678",
+        "direccion": "Calle Mayor 15, Madrid",
+        "fecha_registro": "2024-09-16T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+#### 📭 Sin datos (normal si no hay clientes)
+```json
+{
+  "data": {
+    "clients": []
+  }
+}
+```
+
+#### ❌ Error de configuración
+```json
+{
+  "errors": [
+    {
+      "message": "Error message here...",
+      "extensions": {
+        "code": "BAD_REQUEST"
+      }
+    }
+  ]
+}
+```
+
+### 🔧 Troubleshooting Postman
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| Error CSRF | Falta Content-Type | Agregar header `Content-Type: application/json` |
+| "Could not send request" | App no está corriendo | Ejecutar `npm run start:dev` |
+| Error 404 | URL incorrecta | Usar `http://localhost:3000/graphql` |
+| Sin respuesta | Método GET usado | **Cambiar a POST** |
+
+### 💡 Diferencias con REST API
+
+| Aspecto | REST | GraphQL |
+|---------|------|---------|
+| **Método HTTP** | GET, POST, PUT, DELETE | **Siempre POST** |
+| **Endpoints** | `/clients`, `/clients/1` | **Un solo endpoint** `/graphql` |
+| **Datos solicitados** | Todos los campos | **Solo los campos que necesites** |
+| **Queries** | URL parameters | **En el body JSON** |
 
 ## 🗄️ Conectar a MongoDB
 
