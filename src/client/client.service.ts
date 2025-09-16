@@ -1,32 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateClientInput } from './dto/create-client.input';
 import { UpdateClientInput } from './dto/update-client.input';
 import { Client } from './entities/client.entity';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ClientService {
-  private clients: Client[] = []; // Simulando una base de datos en memoria
+  constructor(
+    @InjectModel(Client.name) private clientModel: Model<Client>
+  ) {}
 
-  create(createClientInput: CreateClientInput): Client {
-    const newClient: Client = {
-      id: uuidv4(),
+  async create(createClientInput: CreateClientInput): Promise<Client> {
+    const newClient = new this.clientModel({
       ...createClientInput,
-      fecha_registro: new Date(),
       isDeleted: false,
-    };
+    });
 
-    this.clients.push(newClient);
-    return newClient;
+    return await newClient.save();
   }
 
-  findAll(): Client[] {
+  async findAll(): Promise<Client[]> {
     // Retorna solo los clientes que no han sido eliminados (soft delete)
-    return this.clients.filter(client => !client.isDeleted);
+    return await this.clientModel.find({ isDeleted: false }).exec();
   }
 
-  findOne(id: string): Client {
-    const client = this.clients.find(client => client.id === id && !client.isDeleted);
+  async findOne(id: string): Promise<Client> {
+    const client = await this.clientModel.findOne({ _id: id, isDeleted: false }).exec();
     
     if (!client) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
@@ -35,65 +35,66 @@ export class ClientService {
     return client;
   }
 
-  update(id: string, updateClientInput: UpdateClientInput): Client {
-    const clientIndex = this.clients.findIndex(client => client.id === id && !client.isDeleted);
-    
-    if (clientIndex === -1) {
-      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
-    }
-
+  async update(id: string, updateClientInput: UpdateClientInput): Promise<Client> {
     // Excluir el id del updateInput para evitar sobrescribirlo
     const { id: inputId, ...updateData } = updateClientInput;
     
-    // Actualizar el cliente manteniendo los campos que no se modifican
-    this.clients[clientIndex] = {
-      ...this.clients[clientIndex],
-      ...updateData,
-    };
-
-    return this.clients[clientIndex];
-  }
-
-  remove(id: string): Client {
-    const clientIndex = this.clients.findIndex(client => client.id === id && !client.isDeleted);
+    const updatedClient = await this.clientModel.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      updateData,
+      { new: true }
+    ).exec();
     
-    if (clientIndex === -1) {
+    if (!updatedClient) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
     }
 
+    return updatedClient;
+  }
+
+  async remove(id: string): Promise<Client> {
     // Soft delete: marcar como eliminado en lugar de eliminar físicamente
-    this.clients[clientIndex].isDeleted = true;
+    const deletedClient = await this.clientModel.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    ).exec();
     
-    return this.clients[clientIndex];
+    if (!deletedClient) {
+      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+    }
+    
+    return deletedClient;
   }
 
   // Método adicional para restaurar un cliente eliminado
-  restore(id: string): Client {
-    const clientIndex = this.clients.findIndex(client => client.id === id && client.isDeleted);
+  async restore(id: string): Promise<Client> {
+    const restoredClient = await this.clientModel.findOneAndUpdate(
+      { _id: id, isDeleted: true },
+      { isDeleted: false },
+      { new: true }
+    ).exec();
     
-    if (clientIndex === -1) {
+    if (!restoredClient) {
       throw new NotFoundException(`Cliente eliminado con ID ${id} no encontrado`);
     }
 
-    this.clients[clientIndex].isDeleted = false;
-    
-    return this.clients[clientIndex];
+    return restoredClient;
   }
 
   // Método para obtener todos los clientes incluyendo los eliminados (para administración)
-  findAllIncludingDeleted(): Client[] {
-    return this.clients;
+  async findAllIncludingDeleted(): Promise<Client[]> {
+    return await this.clientModel.find().exec();
   }
 
   // Método para eliminar permanentemente un cliente (hard delete)
-  permanentDelete(id: string): boolean {
-    const clientIndex = this.clients.findIndex(client => client.id === id);
+  async permanentDelete(id: string): Promise<boolean> {
+    const result = await this.clientModel.deleteOne({ _id: id }).exec();
     
-    if (clientIndex === -1) {
+    if (result.deletedCount === 0) {
       throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
     }
 
-    this.clients.splice(clientIndex, 1);
     return true;
   }
 }
