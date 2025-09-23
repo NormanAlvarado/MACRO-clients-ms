@@ -3,11 +3,8 @@
 # ------------------------------------------------------
 
 type Client {
-  """ID único del cliente"""
-  _id: ID!
-
-  """Dirección del cliente"""
-  direccion: String!
+  """Direcciones del cliente"""
+  addresses: [ClientAddress!]!
 
   """Email del cliente"""
   email: String!
@@ -15,8 +12,97 @@ type Client {
   """Fecha de registro del cliente"""
   fecha_registro: DateTime!
 
+  """ID único del cliente"""
+  id: Int!
+
   """Indica si el cliente ha sido eliminado (soft delete)"""
   isDeleted: Boolean!
+
+  """Nombre del cliente"""
+  nombre: String!
+
+  """Preferencias del cliente"""
+  preferences: ClientPreferences
+
+  """Teléfono del cliente"""
+  telefono: String!
+}
+
+type ClientAddress {
+  """Calle y número"""
+  calle: String!
+
+  """Ciudad"""
+  ciudad: String!
+
+  """Cliente propietario de esta dirección"""
+  client: Client!
+
+  """ID del cliente"""
+  cliente_id: Int!
+
+  """Código postal"""
+  codigo_postal: String!
+
+  """Indica si es la dirección principal del cliente"""
+  es_principal: Boolean!
+
+  """Estado o provincia"""
+  estado_provincia: String!
+
+  """Fecha de creación de la dirección"""
+  fecha_creacion: DateTime!
+
+  """ID único de la dirección"""
+  id: Int!
+
+  """Indica si la dirección ha sido eliminada (soft delete)"""
+  is_deleted: Boolean!
+
+  """Nombre o alias de la sucursal/dirección"""
+  nombre_sucursal: String
+
+  """País"""
+  pais: String!
+}
+
+type ClientPreferences {
+  cliente_id: Int!
+  id: Int!
+  idioma: String!
+  notificaciones_email: Boolean!
+  notificaciones_push: Boolean!
+}
+
+input CreateClientAddressInput {
+  """Calle y número"""
+  calle: String!
+
+  """Ciudad"""
+  ciudad: String!
+
+  """ID del cliente"""
+  cliente_id: Int!
+
+  """Código postal"""
+  codigo_postal: String!
+
+  """Indica si es la dirección principal"""
+  es_principal: Boolean! = false
+
+  """Estado o provincia"""
+  estado_provincia: String!
+
+  """Nombre o alias de la sucursal/dirección"""
+  nombre_sucursal: String
+
+  """País"""
+  pais: String! = "Costa Rica"
+}
+
+input CreateClientInput {
+  """Email del cliente"""
+  email: String!
 
   """Nombre del cliente"""
   nombre: String!
@@ -25,18 +111,11 @@ type Client {
   telefono: String!
 }
 
-input CreateClientInput {
-  """Dirección del cliente"""
-  direccion: String!
-
-  """Email del cliente"""
-  email: String!
-
-  """Nombre del cliente"""
-  nombre: String!
-
-  """Teléfono del cliente"""
-  telefono: String!
+input CreateClientPreferencesInput {
+  cliente_id: Int!
+  idioma: String
+  notificaciones_email: Boolean
+  notificaciones_push: Boolean
 }
 
 """
@@ -46,29 +125,90 @@ scalar DateTime
 
 type Mutation {
   createClient(createClientInput: CreateClientInput!): Client!
-  permanentDeleteClient(id: ID!): Boolean!
-  removeClient(id: ID!): Client!
-  restoreClient(id: ID!): Client!
+
+  """Crear una nueva dirección para un cliente"""
+  createClientAddress(createClientAddressInput: CreateClientAddressInput!): ClientAddress!
+  createClientPreferences(createClientPreferencesInput: CreateClientPreferencesInput!): ClientPreferences!
+  permanentDeleteClient(id: Int!): Boolean!
+  removeClient(id: Int!): Client!
+
+  """Eliminar una dirección (soft delete)"""
+  removeClientAddress(id: Int!): ClientAddress!
+  removeClientPreferences(id: Int!): ClientPreferences!
+  restoreClient(id: Int!): Client!
+
+  """Establecer una dirección como principal para el cliente"""
+  setPrincipalAddress(id: Int!): ClientAddress!
   updateClient(updateClientInput: UpdateClientInput!): Client!
+
+  """Actualizar una dirección existente"""
+  updateClientAddress(updateClientAddressInput: UpdateClientAddressInput!): ClientAddress!
+  updateClientPreferences(updateClientPreferencesInput: UpdateClientPreferencesInput!): ClientPreferences!
 }
 
 type Query {
   allClientsIncludingDeleted: [Client!]!
-  client(id: ID!): Client!
+  client(id: Int!): Client!
+
+  """Obtener una dirección específica por su ID"""
+  clientAddress(id: Int!): ClientAddress!
+
+  """Obtener todas las direcciones de clientes"""
+  clientAddresses: [ClientAddress!]!
+
+  """Obtener todas las direcciones de un cliente específico"""
+  clientAddressesByClient(clientId: Int!): [ClientAddress!]!
+  clientPreference(id: Int!): ClientPreferences!
+  clientPreferences: [ClientPreferences!]!
+  clientPreferencesByClientId(clientId: Int!): ClientPreferences
   clients: [Client!]!
 }
 
-input UpdateClientInput {
-  """Dirección del cliente"""
-  direccion: String
+input UpdateClientAddressInput {
+  """Calle y número"""
+  calle: String
 
+  """Ciudad"""
+  ciudad: String
+
+  """ID del cliente"""
+  cliente_id: Int
+
+  """Código postal"""
+  codigo_postal: String
+
+  """Indica si es la dirección principal"""
+  es_principal: Boolean
+
+  """Estado o provincia"""
+  estado_provincia: String
+
+  """ID de la dirección a actualizar"""
+  id: Int!
+
+  """Nombre o alias de la sucursal/dirección"""
+  nombre_sucursal: String
+
+  """País"""
+  pais: String
+}
+
+input UpdateClientInput {
   """Email del cliente"""
   email: String
-  id: ID!
+  id: Int!
 
   """Nombre del cliente"""
   nombre: String
 
   """Teléfono del cliente"""
   telefono: String
+}
+
+input UpdateClientPreferencesInput {
+  cliente_id: Int
+  id: Int!
+  idioma: String
+  notificaciones_email: Boolean
+  notificaciones_push: Boolean
 }

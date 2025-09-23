@@ -1,38 +1,40 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToOne, OneToMany } from 'typeorm';
+import { ClientPreferences } from './client-preferences.entity';
+import { ClientAddress } from './client-address.entity';
 
-@Schema({ 
-  collection: 'clientes',
-  timestamps: { createdAt: 'fecha_registro', updatedAt: false }
-})
+@Entity('clientes')
 @ObjectType()
-export class Client extends Document {
-  @Field(() => ID, { description: 'ID único del cliente' })
-  declare _id: string;
+export class Client {
+  @PrimaryGeneratedColumn()
+  @Field(() => Int, { description: 'ID único del cliente' })
+  id: number;
 
-  @Prop({ required: true, maxlength: 150 })
+  @Column({ length: 150 })
   @Field({ description: 'Nombre del cliente' })
   nombre: string;
 
-  @Prop({ required: true, maxlength: 150, unique: true })
+  @Column({ length: 150, unique: true })
   @Field({ description: 'Email del cliente' })
   email: string;
 
-  @Prop({ required: true, maxlength: 20 })
+  @Column({ length: 20 })
   @Field({ description: 'Teléfono del cliente' })
   telefono: string;
 
-  @Prop({ required: true })
-  @Field({ description: 'Dirección del cliente' })
-  direccion: string;
-
+  @CreateDateColumn({ name: 'fecha_registro' })
   @Field({ description: 'Fecha de registro del cliente' })
   fecha_registro: Date;
 
-  @Prop({ default: false })
+  @Column({ default: false, name: 'is_deleted' })
   @Field({ description: 'Indica si el cliente ha sido eliminado (soft delete)' })
   isDeleted: boolean;
-}
 
-export const ClientSchema = SchemaFactory.createForClass(Client);
+  @OneToOne(() => ClientPreferences, preferences => preferences.client)
+  @Field(() => ClientPreferences, { nullable: true, description: 'Preferencias del cliente' })
+  preferences?: ClientPreferences;
+
+  @OneToMany(() => ClientAddress, address => address.client)
+  @Field(() => [ClientAddress], { description: 'Direcciones del cliente' })
+  addresses: ClientAddress[];
+}

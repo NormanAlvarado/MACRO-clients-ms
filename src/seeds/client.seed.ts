@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Client } from '../client/entities/client.entity';
 
 @Injectable()
 export class ClientSeed {
   constructor(
-    @InjectModel(Client.name) private clientModel: Model<Client>
+    @InjectRepository(Client)
+    private clientRepository: Repository<Client>
   ) {}
 
   async run(force: boolean = false): Promise<void> {
     // Verificar si ya existen clientes
-    const existingClients = await this.clientModel.countDocuments();
+    const existingClients = await this.clientRepository.count();
     
     console.log(`📊 Clientes existentes en la base de datos: ${existingClients}`);
     
@@ -23,8 +24,10 @@ export class ClientSeed {
 
     if (existingClients > 0 && force) {
       console.log('🗑️  Eliminando clientes existentes...');
-      await this.clientModel.deleteMany({});
-      console.log('✅ Clientes eliminados.');
+      // Usar DELETE en lugar de TRUNCATE para evitar problemas con foreign keys
+      await this.clientRepository.query('DELETE FROM "preferencias_cliente"');
+      await this.clientRepository.query('DELETE FROM "clientes"');
+      console.log('✅ Clientes y preferencias eliminados.');
     }
 
     const seedClients = [
@@ -121,7 +124,14 @@ export class ClientSeed {
     ];
 
     try {
-      await this.clientModel.insertMany(seedClients);
+      const clientsToSave = seedClients.map(clientData => 
+        this.clientRepository.create({
+          ...clientData,
+          isDeleted: false
+        })
+      );
+      
+      await this.clientRepository.save(clientsToSave);
       console.log(`✅ Seed completado: ${seedClients.length} clientes creados exitosamente.`);
     } catch (error) {
       console.error('❌ Error al ejecutar seed de clientes:', error);

@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Client, ClientSchema } from '../client/entities/client.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Client } from '../client/entities/client.entity';
+import { ClientPreferences } from '../client/entities/client-preferences.entity';
 import { ClientSeed } from './client.seed';
+import { ClientPreferencesSeed } from './client-preferences.seed';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Client.name, schema: ClientSchema }])
+    TypeOrmModule.forFeature([Client, ClientPreferences])
   ],
-  providers: [ClientSeed],
-  exports: [ClientSeed]
+  providers: [ClientSeed, ClientPreferencesSeed],
+  exports: [ClientSeed, ClientPreferencesSeed]
 })
 export class SeedsModule {}

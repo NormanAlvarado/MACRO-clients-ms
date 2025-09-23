@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { ClientService } from './client.service';
 import { Client } from './entities/client.entity';
 import { CreateClientInput } from './dto/create-client.input';
@@ -19,7 +19,7 @@ export class ClientResolver {
   }
 
   @Query(() => Client, { name: 'client' })
-  async findOne(@Args('id', { type: () => ID }) id: string): Promise<Client> {
+  async findOne(@Args('id', { type: () => Int }) id: number): Promise<Client> {
     return this.clientService.findOne(id);
   }
 
@@ -29,13 +29,13 @@ export class ClientResolver {
   }
 
   @Mutation(() => Client)
-  async removeClient(@Args('id', { type: () => ID }) id: string): Promise<Client> {
+  async removeClient(@Args('id', { type: () => Int }) id: number): Promise<Client> {
     return this.clientService.remove(id);
   }
 
   // Métodos adicionales para administración
   @Mutation(() => Client)
-  async restoreClient(@Args('id', { type: () => ID }) id: string): Promise<Client> {
+  async restoreClient(@Args('id', { type: () => Int }) id: number): Promise<Client> {
     return this.clientService.restore(id);
   }
 
@@ -45,7 +45,7 @@ export class ClientResolver {
   }
 
   @Mutation(() => Boolean)
-  async permanentDeleteClient(@Args('id', { type: () => ID }) id: string): Promise<boolean> {
+  async permanentDeleteClient(@Args('id', { type: () => Int }) id: number): Promise<boolean> {
     return this.clientService.permanentDelete(id);
   }
 }
