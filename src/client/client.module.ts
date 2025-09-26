@@ -9,10 +9,12 @@ import { ClientAddressResolver } from './client-address.resolver';
 import { Client } from './entities/client.entity';
 import { ClientPreferences } from './entities/client-preferences.entity';
 import { ClientAddress } from './entities/client-address.entity';
+import { GrpcModule } from 'src/transports/grpcTransports/grpc.module';
+
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Client, ClientPreferences, ClientAddress])
+    TypeOrmModule.forFeature([Client, ClientPreferences, ClientAddress]),GrpcModule
   ],
   providers: [
     ClientResolver, 

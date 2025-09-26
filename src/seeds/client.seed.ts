@@ -1,140 +1,88 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from '../client/entities/client.entity';
 
 @Injectable()
-export class ClientSeed {
+export class ClientSeedService {
+  private readonly logger = new Logger(ClientSeedService.name);
+
   constructor(
     @InjectRepository(Client)
-    private clientRepository: Repository<Client>
+    private readonly clientRepository: Repository<Client>,
   ) {}
 
-  async run(force: boolean = false): Promise<void> {
-    // Verificar si ya existen clientes
-    const existingClients = await this.clientRepository.count();
-    
-    console.log(`📊 Clientes existentes en la base de datos: ${existingClients}`);
-    
-    if (existingClients > 0 && !force) {
-      console.log('✅ Los datos de clientes ya existen. Seed omitido.');
-      console.log('💡 Si quieres recrear los datos, usa: npm run seed:force');
-      return;
-    }
-
-    if (existingClients > 0 && force) {
-      console.log('🗑️  Eliminando clientes existentes...');
-      // Usar DELETE en lugar de TRUNCATE para evitar problemas con foreign keys
-      await this.clientRepository.query('DELETE FROM "preferencias_cliente"');
-      await this.clientRepository.query('DELETE FROM "clientes"');
-      console.log('✅ Clientes y preferencias eliminados.');
-    }
-
-    const seedClients = [
-      {
-        nombre: 'María García López',
-        email: 'maria.garcia@email.com',
-        telefono: '+34 612 345 678',
-        direccion: 'Calle Mayor 123, Madrid, España',
-      },
-      {
-        nombre: 'Carlos Rodríguez Martín',
-        email: 'carlos.rodriguez@gmail.com',
-        telefono: '+34 687 234 567',
-        direccion: 'Avenida de la Constitución 45, Sevilla, España',
-      },
-      {
-        nombre: 'Ana Fernández Silva',
-        email: 'ana.fernandez@hotmail.com',
-        telefono: '+34 623 456 789',
-        direccion: 'Plaza del Sol 12, Barcelona, España',
-      },
-      {
-        nombre: 'Luis Miguel Torres',
-        email: 'luis.torres@yahoo.com',
-        telefono: '+34 654 321 987',
-        direccion: 'Calle de Alcalá 200, Madrid, España',
-      },
-      {
-        nombre: 'Carmen Ruiz Delgado',
-        email: 'carmen.ruiz@outlook.com',
-        telefono: '+34 698 765 432',
-        direccion: 'Rambla de Catalunya 78, Barcelona, España',
-      },
-      {
-        nombre: 'José Antonio Morales',
-        email: 'jose.morales@email.com',
-        telefono: '+34 611 222 333',
-        direccion: 'Calle Real 56, Granada, España',
-      },
-      {
-        nombre: 'Isabel Jiménez Vega',
-        email: 'isabel.jimenez@gmail.com',
-        telefono: '+34 633 444 555',
-        direccion: 'Avenida del Puerto 89, Valencia, España',
-      },
-      {
-        nombre: 'Francisco Javier Herrera',
-        email: 'fj.herrera@hotmail.com',
-        telefono: '+34 677 888 999',
-        direccion: 'Plaza de España 34, Bilbao, España',
-      },
-      {
-        nombre: 'Pilar Sánchez Castro',
-        email: 'pilar.sanchez@yahoo.com',
-        telefono: '+34 655 111 222',
-        direccion: 'Calle de la Paz 67, Zaragoza, España',
-      },
-      {
-        nombre: 'Miguel Ángel Navarro',
-        email: 'miguel.navarro@gmail.com',
-        telefono: '+34 644 333 444',
-        direccion: 'Avenida de Andalucía 123, Málaga, España',
-      },
-      {
-        nombre: 'Rocío Álvarez Pérez',
-        email: 'rocio.alvarez@outlook.com',
-        telefono: '+34 688 555 666',
-        direccion: 'Calle Nueva 45, Salamanca, España',
-      },
-      {
-        nombre: 'Antonio Díaz Romero',
-        email: 'antonio.diaz@email.com',
-        telefono: '+34 622 777 888',
-        direccion: 'Plaza Mayor 18, Valladolid, España',
-      },
-      {
-        nombre: 'Elena Martínez Gómez',
-        email: 'elena.martinez@gmail.com',
-        telefono: '+34 666 999 111',
-        direccion: 'Calle del Carmen 92, Murcia, España',
-      },
-      {
-        nombre: 'Pedro Luis Ramírez',
-        email: 'pedro.ramirez@hotmail.com',
-        telefono: '+34 699 222 333',
-        direccion: 'Avenida de América 156, Alicante, España',
-      },
-      {
-        nombre: 'Dolores Vargas Iglesias',
-        email: 'dolores.vargas@yahoo.com',
-        telefono: '+34 611 444 555',
-        direccion: 'Calle de Toledo 78, Córdoba, España',
-      }
-    ];
-
+  async seed(): Promise<void> {
     try {
-      const clientsToSave = seedClients.map(clientData => 
-        this.clientRepository.create({
-          ...clientData,
-          isDeleted: false
-        })
-      );
-      
-      await this.clientRepository.save(clientsToSave);
-      console.log(`✅ Seed completado: ${seedClients.length} clientes creados exitosamente.`);
+      this.logger.log('🌱 Iniciando seeding de clientes...');
+
+      // Verificar si ya existen clientes
+      const existingClients = await this.clientRepository.count();
+      if (existingClients > 0) {
+        this.logger.warn(`⚠️ Ya existen ${existingClients} clientes, omitiendo seeding...`);
+        return;
+      }
+
+      const seedClients = [
+        {
+          nombre: 'Juan Carlos Pérez',
+          email: 'juan.perez@email.com',
+          telefono: '+506 8888-1111',
+        },
+        {
+          nombre: 'María José González',
+          email: 'maria.gonzalez@email.com',
+          telefono: '+506 8888-2222',
+        },
+        {
+          nombre: 'Carlos Alberto Ramírez',
+          email: 'carlos.ramirez@email.com',
+          telefono: '+506 8888-3333',
+        },
+        {
+          nombre: 'Ana Lucía Morales',
+          email: 'ana.morales@email.com',
+          telefono: '+506 8888-4444',
+        },
+        {
+          nombre: 'Roberto Andrés Castillo',
+          email: 'roberto.castillo@email.com',
+          telefono: '+506 8888-5555',
+        },
+        {
+          nombre: 'Laura Patricia Jiménez',
+          email: 'laura.jimenez@email.com',
+          telefono: '+506 8888-6666',
+        },
+        {
+          nombre: 'Diego Fernando Vargas',
+          email: 'diego.vargas@email.com',
+          telefono: '+506 8888-7777',
+        },
+        {
+          nombre: 'Sofia Isabel Herrera',
+          email: 'sofia.herrera@email.com',
+          telefono: '+506 8888-8888',
+        },
+        {
+          nombre: 'Manuel Eduardo Castro',
+          email: 'manuel.castro@email.com',
+          telefono: '+506 8888-9999',
+        },
+        {
+          nombre: 'Gabriela Alejandra Rojas',
+          email: 'gabriela.rojas@email.com',
+          telefono: '+506 8888-0000',
+        },
+      ];
+
+      const clients = this.clientRepository.create(seedClients);
+      await this.clientRepository.save(clients);
+
+      this.logger.log(`✅ Se crearon ${clients.length} clientes exitosamente`);
+
     } catch (error) {
-      console.error('❌ Error al ejecutar seed de clientes:', error);
+      this.logger.error('❌ Error durante el seeding de clientes:', error.message);
       throw error;
     }
   }

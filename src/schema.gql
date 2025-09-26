@@ -146,6 +146,32 @@ type Mutation {
   updateClientPreferences(updateClientPreferencesInput: UpdateClientPreferencesInput!): ClientPreferences!
 }
 
+type PaginatedClientAddresses {
+  clientId: Int!
+  data: [ClientAddress!]!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type PaginatedClients {
+  data: [Client!]!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
+}
+
 type Query {
   allClientsIncludingDeleted: [Client!]!
   client(id: Int!): Client!
@@ -158,10 +184,14 @@ type Query {
 
   """Obtener todas las direcciones de un cliente específico"""
   clientAddressesByClient(clientId: Int!): [ClientAddress!]!
+
+  """Obtener las direcciones de un cliente específico con paginación"""
+  clientAddressesByClientPaginated(clientId: Int!, paginationInput: PaginationInput): PaginatedClientAddresses!
   clientPreference(id: Int!): ClientPreferences!
   clientPreferences: [ClientPreferences!]!
   clientPreferencesByClientId(clientId: Int!): ClientPreferences
   clients: [Client!]!
+  clientsPaginated(paginationInput: PaginationInput): PaginatedClients!
 }
 
 input UpdateClientAddressInput {

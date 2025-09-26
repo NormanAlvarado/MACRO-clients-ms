@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateClientInput } from './dto/create-client.input';
 import { UpdateClientInput } from './dto/update-client.input';
+import { PaginationInput } from './dto/pagination.input';
+import { PaginatedClients } from './dto/paginated-clients.output';
 import { Client } from './entities/client.entity';
 
 @Injectable()
@@ -27,6 +29,31 @@ export class ClientService {
       where: { isDeleted: false },
       relations: ['preferences', 'addresses']
     });
+  }
+
+  async findAllPaginated(paginationInput: PaginationInput): Promise<PaginatedClients> {
+    const { page = 1, limit = 10 } = paginationInput;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.clientRepository.findAndCount({
+      where: { isDeleted: false },
+      relations: ['preferences', 'addresses'],
+      skip,
+      take: limit,
+      order: { id: 'ASC' }
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1
+    };
   }
 
   async findOne(id: number): Promise<Client> {

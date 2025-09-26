@@ -4,6 +4,8 @@ import { Repository, Not } from 'typeorm';
 import { ClientAddress } from './entities/client-address.entity';
 import { CreateClientAddressInput } from './dto/create-client-address.input';
 import { UpdateClientAddressInput } from './dto/update-client-address.input';
+import { PaginationInput } from './dto/pagination.input';
+import { PaginatedClientAddresses } from './dto/paginated-client-addresses.output';
 
 @Injectable()
 export class ClientAddressService {
@@ -35,6 +37,31 @@ export class ClientAddressService {
       where: { cliente_id: clientId, is_deleted: false },
       order: { es_principal: 'DESC', fecha_creacion: 'ASC' }
     });
+  }
+
+  async findByClientIdPaginated(clientId: number, paginationInput: PaginationInput): Promise<PaginatedClientAddresses> {
+    const { page = 1, limit = 10 } = paginationInput;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await this.clientAddressRepository.findAndCount({
+      where: { cliente_id: clientId, is_deleted: false },
+      order: { es_principal: 'DESC', fecha_creacion: 'ASC' },
+      skip,
+      take: limit
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+      clientId
+    };
   }
 
   async findOne(id: number): Promise<ClientAddress> {

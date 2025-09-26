@@ -4,9 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
 import { join } from 'path';
-import { AppService } from './app.service';
 import { ClientModule } from './client/client.module';
 import { SeedsModule } from './seeds/seeds.module';
+import { AuthModule } from './auth/auth.module';
 import { Client } from './client/entities/client.entity';
 import { ClientPreferences } from './client/entities/client-preferences.entity';
 import { ClientAddress } from './client/entities/client-address.entity';
@@ -40,9 +40,10 @@ import { ClientAddress } from './client/entities/client-address.entity';
       sortSchema: true,
       csrfPrevention: false,
     }),
+    AuthModule,
     ClientModule,
     SeedsModule
   ],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

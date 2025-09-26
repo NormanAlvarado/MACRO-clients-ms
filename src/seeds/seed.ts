@@ -1,210 +1,55 @@
-import { DataSource } from 'typeorm';
-import { Client } from '../client/entities/client.entity';
-import { ClientPreferences } from '../client/entities/client-preferences.entity';
-import { ClientAddress } from '../client/entities/client-address.entity';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../app.module';
+import { ClientSeedService } from './client.seed';
+import { ClientPreferencesSeedService } from './client-preferences.seed';
+import { AuthSeedService } from './auth.seed';
 
-export async function seedDatabase(dataSource: DataSource) {
-  console.log('🌱 Iniciando seed de la base de datos...');
-
-  const clientRepository = dataSource.getRepository(Client);
-  const preferencesRepository = dataSource.getRepository(ClientPreferences);
-  const addressRepository = dataSource.getRepository(ClientAddress);
+async function seed() {
+  const app = await NestFactory.createApplicationContext(AppModule);
 
   try {
-    // Limpiar datos existentes
-    console.log('🧹 Limpiando datos existentes...');
-    await addressRepository.delete({});
-    await preferencesRepository.delete({});
-    await clientRepository.delete({});
+    console.log('🌱 Iniciando proceso de seeding...');
+    
+    // Primero verificar conexión con el servicio de auth
+    const authSeedService = app.get(AuthSeedService);
+    
+    console.log('🔍 Verificando conexión con servicio de autenticación...');
+    await authSeedService.validateAuthConnection();
+    
+    // Crear usuarios de prueba
+    console.log('👥 Creando usuarios de prueba...');
+    const authResult = await authSeedService.seedUsers();
+    console.log('📋 Usuarios procesados:', authResult.users.length);
+    
+    // Ejecutar seeds de clientes
+    const clientSeedService = app.get(ClientSeedService);
+    const clientPreferencesSeedService = app.get(ClientPreferencesSeedService);
 
-    // Datos de clientes
-    const clientsData = [
-      {
-        nombre: 'Juan Pérez',
-        email: 'juan.perez@email.com',
-        telefono: '+506 8888 1111',
-      },
-      {
-        nombre: 'María García',
-        email: 'maria.garcia@email.com',
-        telefono: '+506 8888 2222',
-      },
-      {
-        nombre: 'Carlos López',
-        email: 'carlos.lopez@email.com',
-        telefono: '+506 8888 3333',
-      },
-      {
-        nombre: 'Ana Martínez',
-        email: 'ana.martinez@email.com',
-        telefono: '+506 8888 4444',
-      },
-      {
-        nombre: 'Pedro Sánchez',
-        email: 'pedro.sanchez@email.com',
-        telefono: '+506 8888 5555',
-      },
-      {
-        nombre: 'Laura Fernández',
-        email: 'laura.fernandez@email.com',
-        telefono: '+506 8888 6666',
-      },
-      {
-        nombre: 'Miguel Torres',
-        email: 'miguel.torres@email.com',
-        telefono: '+506 8888 7777',
-      },
-      {
-        nombre: 'Carmen Ruiz',
-        email: 'carmen.ruiz@email.com',
-        telefono: '+506 8888 8888',
-      },
-      {
-        nombre: 'Roberto Jiménez',
-        email: 'roberto.jimenez@email.com',
-        telefono: '+506 8888 9999',
-      },
-      {
-        nombre: 'Isabel Moreno',
-        email: 'isabel.moreno@email.com',
-        telefono: '+506 8889 0000',
-      },
-      {
-        nombre: 'David Herrera',
-        email: 'david.herrera@email.com',
-        telefono: '+506 8889 1111',
-      },
-      {
-        nombre: 'Elena Vargas',
-        email: 'elena.vargas@email.com',
-        telefono: '+506 8889 2222',
-      },
-      {
-        nombre: 'Francisco Castro',
-        email: 'francisco.castro@email.com',
-        telefono: '+506 8889 3333',
-      },
-      {
-        nombre: 'Lucía Ortega',
-        email: 'lucia.ortega@email.com',
-        telefono: '+506 8889 4444',
-      },
-      {
-        nombre: 'Antonio Ramos',
-        email: 'antonio.ramos@email.com',
-        telefono: '+506 8889 5555',
-      }
-    ];
-
-    // Crear clientes
-    console.log('👥 Creando clientes...');
-    const clients: Client[] = [];
-    for (const clientData of clientsData) {
-      const client = clientRepository.create({
-        ...clientData,
-        isDeleted: false,
-      });
-      const savedClient = await clientRepository.save(client);
-      clients.push(savedClient);
-    }
-
-    console.log(`✅ ${clients.length} clientes creados exitosamente`);
-
-    // Crear preferencias para cada cliente
+    console.log('👤 Creando clientes de prueba...');
+    await clientSeedService.seed();
+    
     console.log('⚙️ Creando preferencias de clientes...');
-    const idiomas = ['es', 'en', 'fr', 'de', 'it'];
-    for (const client of clients) {
-      const preferences = preferencesRepository.create({
-        cliente_id: client.id,
-        idioma: idiomas[Math.floor(Math.random() * idiomas.length)],
-        notificaciones_email: Math.random() > 0.3,
-        notificaciones_push: Math.random() > 0.5,
-      });
-      await preferencesRepository.save(preferences);
-    }
+    await clientPreferencesSeedService.seed();
 
-    console.log('✅ Preferencias creadas exitosamente');
-
-    // Datos de direcciones
-    const ciudades = [
-      { ciudad: 'San José', estado: 'San José', codigo: '10101' },
-      { ciudad: 'Alajuela', estado: 'Alajuela', codigo: '20101' },
-      { ciudad: 'Cartago', estado: 'Cartago', codigo: '30101' },
-      { ciudad: 'Heredia', estado: 'Heredia', codigo: '40101' },
-      { ciudad: 'Puntarenas', estado: 'Puntarenas', codigo: '60101' },
-      { ciudad: 'Liberia', estado: 'Guanacaste', codigo: '50101' },
-      { ciudad: 'Limón', estado: 'Limón', codigo: '70101' },
-      { ciudad: 'Desamparados', estado: 'San José', codigo: '10201' },
-      { ciudad: 'Escazú', estado: 'San José', codigo: '10202' },
-      { ciudad: 'Santa Ana', estado: 'San José', codigo: '10901' },
-    ];
-
-    const calles = [
-      'Avenida Central',
-      'Avenida Segunda',
-      'Calle de la Amargura',
-      'Paseo Colón',
-      'Avenida Escazú',
-      'Boulevard de Rohrmoser',
-      'Calle Blancos',
-      'Avenida de los Yoses',
-      'Calle Real de Guadalupe',
-      'Avenida 10'
-    ];
-
-    const tiposSucursal = [
-      'Oficina Principal',
-      'Sucursal Centro',
-      'Bodega',
-      'Tienda',
-      'Oficina Comercial',
-      'Centro de Distribución',
-      'Sala de Ventas',
-      'Taller',
-      'Sede Administrativa'
-    ];
-
-    // Crear direcciones para cada cliente (1-3 direcciones por cliente)
-    console.log('🏠 Creando direcciones de clientes...');
-    for (const client of clients) {
-      const numDirecciones = Math.floor(Math.random() * 3) + 1; // 1 a 3 direcciones
-      
-      for (let i = 0; i < numDirecciones; i++) {
-        const ciudadInfo = ciudades[Math.floor(Math.random() * ciudades.length)];
-        const calle = calles[Math.floor(Math.random() * calles.length)];
-        const numero = Math.floor(Math.random() * 200) + 1;
-        
-        const address = addressRepository.create({
-          cliente_id: client.id,
-          nombre_sucursal: i === 0 ? 'Oficina Principal' : tiposSucursal[Math.floor(Math.random() * tiposSucursal.length)],
-          calle: `${calle}, ${numero}`,
-          ciudad: ciudadInfo.ciudad,
-          estado_provincia: ciudadInfo.estado,
-          codigo_postal: ciudadInfo.codigo,
-          pais: 'Costa Rica',
-          es_principal: i === 0, // La primera dirección siempre es principal
-          is_deleted: false
-        });
-        
-        await addressRepository.save(address);
-      }
-    }
-
-    console.log('✅ Direcciones creadas exitosamente');
-
-    // Mostrar estadísticas
-    const totalClients = await clientRepository.count();
-    const totalPreferences = await preferencesRepository.count();
-    const totalAddresses = await addressRepository.count();
-
-    console.log('📊 Estadísticas del seed:');
-    console.log(`   - Clientes: ${totalClients}`);
-    console.log(`   - Preferencias: ${totalPreferences}`);
-    console.log(`   - Direcciones: ${totalAddresses}`);
-    console.log('🎉 Seed completado exitosamente!');
-
+    console.log('✅ Seeding completado exitosamente');
+    console.log('\n📊 Resumen de usuarios creados:');
+    authResult.users.forEach(user => {
+      console.log(`  - ${user.email} (${user.role}) - ${user.userName}`);
+    });
+    
   } catch (error) {
-    console.error('❌ Error durante el seed:', error);
-    throw error;
+    console.error('❌ Error durante el seeding:', error.message);
+    console.error('\n💡 Sugerencias:');
+    console.error('  1. Asegúrate de que el servicio de autenticación esté ejecutándose');
+    console.error('  2. Verifica que la URL en GRPC_AUTH_URL sea correcta');
+    console.error('  3. Revisa que el puerto 3003 esté disponible');
+    process.exit(1);
+  } finally {
+    await app.close();
   }
 }
+
+seed().catch((error) => {
+  console.error('💥 Error fatal durante el seeding:', error);
+  process.exit(1);
+});
