@@ -20,9 +20,4 @@ export class CreateClientInput {
   @IsString({ message: 'El teléfono debe ser una cadena de texto' })
   @MaxLength(20, { message: 'El teléfono no puede exceder 20 caracteres' })
   telefono: string;
-
-  @Field({ description: 'Dirección del cliente' })
-  @IsNotEmpty({ message: 'La dirección no puede estar vacía' })
-  @IsString({ message: 'La dirección debe ser una cadena de texto' })
-  direccion: string;
 }

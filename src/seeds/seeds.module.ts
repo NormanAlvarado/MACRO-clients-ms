@@ -1,13 +1,26 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Client, ClientSchema } from '../client/entities/client.entity';
-import { ClientSeed } from './client.seed';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Client } from '../client/entities/client.entity';
+import { ClientPreferences } from '../client/entities/client-preferences.entity';
+import { GrpcModule } from '../transports/grpcTransports/grpc.module';
+import { AuthSeedService } from './auth.seed';
+import { ClientSeedService } from './client.seed';
+import { ClientPreferencesSeedService } from './client-preferences.seed';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Client.name, schema: ClientSchema }])
+    TypeOrmModule.forFeature([Client, ClientPreferences]),
+    GrpcModule,
   ],
-  providers: [ClientSeed],
-  exports: [ClientSeed]
+  providers: [
+    AuthSeedService,
+    ClientSeedService,
+    ClientPreferencesSeedService,
+  ],
+  exports: [
+    AuthSeedService,
+    ClientSeedService,
+    ClientPreferencesSeedService,
+  ]
 })
 export class SeedsModule {}

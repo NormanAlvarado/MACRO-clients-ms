@@ -15,8 +15,9 @@ lerna-debug.log*
 # OS
 .DS_Store
 
-# MongoDB data (Docker volumes)
+# Database data (Docker volumes)
 mongo/
+postgres_data/
 *.wt
 *.lock
 

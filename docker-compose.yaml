@@ -1,23 +1,27 @@
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: macro-clients-mongo
+  postgres:
+    image: postgres:15
+    container_name: macro-clients-postgres
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "5433:5432"
     environment:
-      MONGO_INITDB_DATABASE: macro-clients-db
+      POSTGRES_DB: macro-clients-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - ./mongo:/data/db
-      - ./mongo/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - macro-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d macro-clients-db"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  postgres_data:
 
 networks:
   macro-network:

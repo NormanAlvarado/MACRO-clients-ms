@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriverConfig, ApolloDriver } from '@nestjs/apollo';
 import { join } from 'path';
-import { AppService } from './app.service';
 import { ClientModule } from './client/client.module';
 import { SeedsModule } from './seeds/seeds.module';
+import { AuthModule } from './auth/auth.module';
+import { Client } from './client/entities/client.entity';
+import { ClientPreferences } from './client/entities/client-preferences.entity';
+import { ClientAddress } from './client/entities/client-address.entity';
 
 @Module({
   imports: [
@@ -14,10 +17,18 @@ import { SeedsModule } from './seeds/seeds.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    MongooseModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/macro-clients-db',
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST') || 'localhost',
+        port: configService.get<number>('DB_PORT') || 5432,
+        username: configService.get<string>('DB_USERNAME') || 'postgres',
+        password: configService.get<string>('DB_PASSWORD') || 'postgres',
+        database: configService.get<string>('DB_DATABASE') || 'macro-clients-db',
+        entities: [Client, ClientPreferences, ClientAddress],
+        synchronize: configService.get<string>('NODE_ENV') !== 'production',
+        logging: configService.get<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),
@@ -27,10 +38,12 @@ import { SeedsModule } from './seeds/seeds.module';
       playground: true,
       introspection: true,
       sortSchema: true,
+      csrfPrevention: false,
     }),
+    AuthModule,
     ClientModule,
     SeedsModule
   ],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}
