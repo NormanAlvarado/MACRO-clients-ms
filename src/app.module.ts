@@ -7,6 +7,7 @@ import { join } from 'path';
 import { ClientModule } from './client/client.module';
 import { SeedsModule } from './seeds/seeds.module';
 import { AuthModule } from './auth/auth.module';
+import { HealthCheckModule } from './health-check/health-check.module';
 import { Client } from './client/entities/client.entity';
 import { ClientPreferences } from './client/entities/client-preferences.entity';
 import { ClientAddress } from './client/entities/client-address.entity';
@@ -42,7 +43,8 @@ import { ClientAddress } from './client/entities/client-address.entity';
     }),
     AuthModule,
     ClientModule,
-    SeedsModule
+    SeedsModule,
+    HealthCheckModule
   ],
   providers: [],
 })
