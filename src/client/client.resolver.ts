@@ -29,7 +29,7 @@ export class ClientResolver {
   }
 
   @Query(() => [Client], { name: 'clients' })
-  @UseGuards(CurrentSession, RateLimitGuard, RolesGuard)
+  //@UseGuards(CurrentSession, RateLimitGuard, RolesGuard)
   @Roles(Role.BASIC, Role.COLABORATOR, Role.MODERATOR, Role.MASTER)
   async findAll(@User() user: currentUserInterface.CurrentUser): Promise<Client[]> {
     return this.clientService.findAll();

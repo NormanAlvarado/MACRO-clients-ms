@@ -11,6 +11,7 @@ import { HealthCheckModule } from './health-check/health-check.module';
 import { Client } from './client/entities/client.entity';
 import { ClientPreferences } from './client/entities/client-preferences.entity';
 import { ClientAddress } from './client/entities/client-address.entity';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { ClientAddress } from './client/entities/client-address.entity';
     AuthModule,
     ClientModule,
     SeedsModule,
-    HealthCheckModule
+    HealthCheckModule,
+    MetricsModule
   ],
   providers: [],
 })

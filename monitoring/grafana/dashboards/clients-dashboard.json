@@ -1,0 +1,151 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "MACRO Clients Microservice",
+    "tags": ["macro", "clients", "microservice"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Operaciones de Clientes por Minuto",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(client_operations_total[1m])",
+            "legendFormat": "{{operation}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Operaciones/min",
+            "min": 0
+          },
+          {
+            "label": "",
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Clientes Activos vs Eliminados",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "client_active_total",
+            "legendFormat": "Activos",
+            "refId": "A"
+          },
+          {
+            "expr": "client_deleted_total",
+            "legendFormat": "Eliminados",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Consultas a Base de Datos por Minuto",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(client_queries_total[1m])",
+            "legendFormat": "{{query_type}} - {{table}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Queries/min",
+            "min": 0
+          },
+          {
+            "label": "",
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Duración de Operaciones (P95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, client_operation_duration_seconds_bucket)",
+            "legendFormat": "P95 {{operation}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Segundos",
+            "min": 0
+          },
+          {
+            "label": "",
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Errores de Base de Datos",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(client_database_errors_total[5m])",
+            "legendFormat": "{{operation}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Errores/min",
+            "min": 0
+          },
+          {
+            "label": "",
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s"
+  }
+}

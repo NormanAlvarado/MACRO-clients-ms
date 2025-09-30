@@ -43,9 +43,11 @@ export class CurrentSession implements CanActivate {
       
     } catch (error) {
       console.log('❌ Guard - Token validation error:', error.message);
+      
       if (error?.message?.includes('jwt expired') || error?.name === 'TokenExpiredError') {
         throw new UnauthorizedException('El token ha expirado, por favor inicia sesión de nuevo');
       }
+      
       throw new UnauthorizedException('El token no es válido');
     }
 

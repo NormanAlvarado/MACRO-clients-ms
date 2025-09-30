@@ -6,29 +6,68 @@ import { UpdateClientInput } from './dto/update-client.input';
 import { PaginationInput } from './dto/pagination.input';
 import { PaginatedClients } from './dto/paginated-clients.output';
 import { Client } from './entities/client.entity';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 export class ClientService {
   constructor(
     @InjectRepository(Client)
-    private clientRepository: Repository<Client>
+    private clientRepository: Repository<Client>,
+    private readonly metricsService: MetricsService
   ) {}
 
   async create(createClientInput: CreateClientInput): Promise<Client> {
-    const newClient = this.clientRepository.create({
-      ...createClientInput,
-      isDeleted: false,
-    });
+    const timer = this.metricsService.measureClientOperationDuration('create', 'success');
+    const end = timer.startTimer();
+    
+    try {
+      const newClient = this.clientRepository.create({
+        ...createClientInput,
+        isDeleted: false,
+      });
 
-    return await this.clientRepository.save(newClient);
+      const result = await this.clientRepository.save(newClient);
+      
+      // Registrar métricas exitosas
+      this.metricsService.incrementClientOperation('create', 'success', 'unknown');
+      this.metricsService.incrementClientQuery('insert', 'clientes', 'success');
+      end();
+      
+      // Actualizar contador de clientes activos
+      await this.updateActiveClientsCount();
+      
+      return result;
+    } catch (error) {
+      end();
+      this.metricsService.incrementClientOperation('create', 'error', 'unknown');
+      this.metricsService.incrementClientQuery('insert', 'clientes', 'error');
+      this.metricsService.incrementDatabaseError('create', error.constructor.name);
+      throw error;
+    }
   }
 
   async findAll(): Promise<Client[]> {
-    // Retorna solo los clientes que no han sido eliminados (soft delete)
-    return await this.clientRepository.find({ 
-      where: { isDeleted: false },
-      relations: ['preferences', 'addresses']
-    });
+    const timer = this.metricsService.measureClientOperationDuration('findAll', 'success');
+    const end = timer.startTimer();
+    
+    try {
+      // Retorna solo los clientes que no han sido eliminados (soft delete)
+      const result = await this.clientRepository.find({ 
+        where: { isDeleted: false },
+        relations: ['preferences', 'addresses']
+      });
+      
+      this.metricsService.incrementClientOperation('findAll', 'success', 'unknown');
+      this.metricsService.incrementClientQuery('select', 'clientes', 'success');
+      end();
+      return result;
+    } catch (error) {
+      end();
+      this.metricsService.incrementClientOperation('findAll', 'error', 'unknown');
+      this.metricsService.incrementClientQuery('select', 'clientes', 'error');
+      this.metricsService.incrementDatabaseError('findAll', error.constructor.name);
+      throw error;
+    }
   }
 
   async findAllPaginated(paginationInput: PaginationInput): Promise<PaginatedClients> {
@@ -70,33 +109,75 @@ export class ClientService {
   }
 
   async update(id: number, updateClientInput: UpdateClientInput): Promise<Client> {
-    // Excluir el id del updateInput para evitar sobrescribirlo
-    const { id: inputId, ...updateData } = updateClientInput;
+    const timer = this.metricsService.measureClientOperationDuration('update', 'success');
+    const end = timer.startTimer();
     
-    const client = await this.clientRepository.findOne({ 
-      where: { id, isDeleted: false }
-    });
-    
-    if (!client) {
-      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
-    }
+    try {
+      // Excluir el id del updateInput para evitar sobrescribirlo
+      const { id: inputId, ...updateData } = updateClientInput;
+      
+      const client = await this.clientRepository.findOne({ 
+        where: { id, isDeleted: false }
+      });
+      
+      if (!client) {
+        end();
+        this.metricsService.incrementClientOperation('update', 'error', 'unknown');
+        throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+      }
 
-    Object.assign(client, updateData);
-    return await this.clientRepository.save(client);
+      Object.assign(client, updateData);
+      const result = await this.clientRepository.save(client);
+      
+      this.metricsService.incrementClientOperation('update', 'success', 'unknown');
+      this.metricsService.incrementClientQuery('update', 'clientes', 'success');
+      end();
+      return result;
+    } catch (error) {
+      end();
+      this.metricsService.incrementClientOperation('update', 'error', 'unknown');
+      if (!(error instanceof NotFoundException)) {
+        this.metricsService.incrementDatabaseError('update', error.constructor.name);
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<Client> {
-    // Soft delete: marcar como eliminado en lugar de eliminar físicamente
-    const client = await this.clientRepository.findOne({ 
-      where: { id, isDeleted: false }
-    });
+    const timer = this.metricsService.measureClientOperationDuration('remove', 'success');
+    const end = timer.startTimer();
     
-    if (!client) {
-      throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+    try {
+      // Soft delete: marcar como eliminado en lugar de eliminar físicamente
+      const client = await this.clientRepository.findOne({ 
+        where: { id, isDeleted: false }
+      });
+      
+      if (!client) {
+        end();
+        this.metricsService.incrementClientOperation('remove', 'error', 'unknown');
+        throw new NotFoundException(`Cliente con ID ${id} no encontrado`);
+      }
+      
+      client.isDeleted = true;
+      const result = await this.clientRepository.save(client);
+      
+      this.metricsService.incrementClientOperation('remove', 'success', 'unknown');
+      this.metricsService.incrementClientQuery('update', 'clientes', 'success');
+      end();
+      
+      // Actualizar contador de clientes activos
+      await this.updateActiveClientsCount();
+      
+      return result;
+    } catch (error) {
+      end();
+      this.metricsService.incrementClientOperation('remove', 'error', 'unknown');
+      if (!(error instanceof NotFoundException)) {
+        this.metricsService.incrementDatabaseError('remove', error.constructor.name);
+      }
+      throw error;
     }
-    
-    client.isDeleted = true;
-    return await this.clientRepository.save(client);
   }
 
   // Método adicional para restaurar un cliente eliminado
@@ -127,5 +208,23 @@ export class ClientService {
     }
 
     return true;
+  }
+
+  // Método privado para actualizar contadores de clientes
+  private async updateActiveClientsCount(): Promise<void> {
+    try {
+      const activeCount = await this.clientRepository.count({ 
+        where: { isDeleted: false } 
+      });
+      const deletedCount = await this.clientRepository.count({ 
+        where: { isDeleted: true } 
+      });
+      
+      this.metricsService.setActiveClientsCount(activeCount);
+      this.metricsService.setDeletedClientsCount(deletedCount);
+    } catch (error) {
+      // Si falla la actualización de métricas, no interrumpir el flujo principal
+      console.warn('Error actualizando métricas de clientes:', error.message);
+    }
   }
 }

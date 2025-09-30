@@ -10,11 +10,14 @@ import { Client } from './entities/client.entity';
 import { ClientPreferences } from './entities/client-preferences.entity';
 import { ClientAddress } from './entities/client-address.entity';
 import { GrpcModule } from 'src/transports/grpcTransports/grpc.module';
+import { MetricsModule } from '../metrics/metrics.module';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Client, ClientPreferences, ClientAddress]),GrpcModule
+    TypeOrmModule.forFeature([Client, ClientPreferences, ClientAddress]),
+    GrpcModule,
+    MetricsModule
   ],
   providers: [
     ClientResolver, 
